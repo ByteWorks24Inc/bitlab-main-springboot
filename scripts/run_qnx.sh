@@ -30,12 +30,13 @@ WIN_PROJECT_CMD="C:\\Users\\Utej\\ide-8.0-workspace\\Demo"
 # QNX environment batch file
 WIN_ENV_CMD="C:\\Users\\Utej\\qnx800\\env_full.bat"
 
-# QNX VM details
-VM_IP="192.168.174.128"
+# Reverse SSH tunnel details
+VM_IP="localhost"
+VM_PORT="2222"
 VM_USER="root"
 VM_TARGET="/tmp/Demo"
 
-# Deterministic binary path (avoid random find issues)
+# Deterministic binary path
 BINARY="$WIN_PROJECT/build/x86_64-debug/Demo"
 
 LOGFILE="/tmp/qnx_execution.log"
@@ -91,12 +92,12 @@ fi
 echo "Binary located successfully" >> "$LOGFILE"
 
 ############################################
-# 4️⃣ Copy binary to VM
+# 4️⃣ Copy binary to VM (via reverse SSH)
 ############################################
 
 echo "Copying binary to VM..." >> "$LOGFILE"
 
-scp "$BINARY" $VM_USER@$VM_IP:$VM_TARGET >> "$LOGFILE" 2>&1
+scp -P $VM_PORT "$BINARY" $VM_USER@$VM_IP:$VM_TARGET >> "$LOGFILE" 2>&1
 
 if [ $? -ne 0 ]; then
     echo "SCP failed" >> "$LOGFILE"
@@ -112,7 +113,7 @@ echo "Binary copied successfully" >> "$LOGFILE"
 
 echo "Executing program on VM..." >> "$LOGFILE"
 
-OUTPUT=$(timeout 10s ssh $VM_USER@$VM_IP \
+OUTPUT=$(ssh -p $VM_PORT $VM_USER@$VM_IP \
 "chmod +x $VM_TARGET && timeout 5s $VM_TARGET 2>&1 | head -n 200")
 
 echo "===== PROGRAM OUTPUT =====" >> "$LOGFILE"
